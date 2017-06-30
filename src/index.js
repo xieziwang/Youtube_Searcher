@@ -1,15 +1,48 @@
-import React from 'react';
+import React,{Component} from 'react';
 import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { createStore, applyMiddleware } from 'redux';
+import _ from 'lodash';
+import YTSearch from 'youtube-api-search';
+import SearchBar from './components/search_bar';
+import VideoList from './components/video_list';
+import VideoDetail from './components/video_detail';
+const API_KEY = 'AIzaSyAaIsVU__X2TgHERrAM-aVAWxRCpy_ymaM';
 
-import App from './components/app';
-import reducers from './reducers';
+class App extends Component{
+  constructor(props){
+    super(props);
+    this.state={
+      videos:[],
+      selectedVideo:null
+    };
 
-const createStoreWithMiddleware = applyMiddleware()(createStore);
+    this.videoSearch('surfboards');
+  }
 
-ReactDOM.render(
-  <Provider store={createStoreWithMiddleware(reducers)}>
-    <App />
-  </Provider>
-  , document.querySelector('.container'));
+  videoSearch(term){
+    // import the youtube-api-search library, and retrieve data
+    YTSearch({key:API_KEY, term:term}, (videos) =>{
+      this.setState({
+        videos: videos,
+        selectedVideo:videos[0]
+      });
+      // this.setState({videos}) eauqls to this.setState({videos:videos}); It's ES6 syntax sugar
+    });
+  }
+
+  render(){
+    // use lodash built in function debouce. put in a function and return another every set millseconds.
+    const videoSearch = _.debounce((term)=>{this.videoSearch(term)}, 500);
+    // <SearchBar onSearchTermChange={term=>this.videoSearch(term)}/>
+
+    return (
+      <div>
+        <SearchBar onSearchTermChange = {videoSearch} />
+        <VideoDetail video={this.state.selectedVideo}/>
+        <VideoList
+          videos = {this.state.videos} onVideoSelect={selectedVideo=>this.setState({selectedVideo})}/>
+      </div>
+    );
+  }
+}
+
+ReactDOM.render(<App />, document.querySelector(".container"));
